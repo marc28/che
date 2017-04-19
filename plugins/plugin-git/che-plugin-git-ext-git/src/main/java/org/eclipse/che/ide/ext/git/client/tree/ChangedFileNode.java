@@ -8,7 +8,7 @@
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
  *******************************************************************************/
-package org.eclipse.che.ide.ext.git.client.compare.changedList;
+package org.eclipse.che.ide.ext.git.client.tree;
 
 import org.eclipse.che.api.promises.client.Promise;
 import org.eclipse.che.api.promises.client.js.Promises;
@@ -16,7 +16,6 @@ import org.eclipse.che.ide.api.data.tree.AbstractTreeNode;
 import org.eclipse.che.ide.api.data.tree.HasAction;
 import org.eclipse.che.ide.api.data.tree.Node;
 import org.eclipse.che.ide.ext.git.client.compare.FileStatus.Status;
-import org.eclipse.che.ide.ext.git.client.compare.changedList.ChangedListView.ActionDelegate;
 import org.eclipse.che.ide.project.shared.NodesResources;
 import org.eclipse.che.ide.resource.Path;
 import org.eclipse.che.ide.ui.smartTree.presentation.HasPresentation;
@@ -35,11 +34,11 @@ public class ChangedFileNode extends AbstractTreeNode implements HasPresentation
 
     private NodePresentation nodePresentation;
 
-    private final String         pathName;
-    private final Status         status;
-    private final NodesResources nodesResources;
-    private final ActionDelegate actionDelegate;
-    private final boolean        viewPath;
+    private final String                  pathName;
+    private final Status                  status;
+    private final NodesResources          nodesResources;
+    private final TreeView.ActionDelegate actionDelegate;
+    private final boolean                 viewPath;
 
     /**
      * Create instance of ChangedFileNode.
@@ -59,7 +58,7 @@ public class ChangedFileNode extends AbstractTreeNode implements HasPresentation
     public ChangedFileNode(String pathName,
                            Status status,
                            NodesResources nodesResources,
-                           ActionDelegate actionDelegate,
+                           TreeView.ActionDelegate actionDelegate,
                            boolean viewPath) {
         this.pathName = pathName;
         this.status = status;

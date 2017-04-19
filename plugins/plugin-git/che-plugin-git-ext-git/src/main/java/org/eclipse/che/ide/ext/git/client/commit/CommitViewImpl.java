@@ -98,6 +98,22 @@ public class CommitViewImpl extends Window implements CommitView {
         this.setTitle(locale.commitTitle());
         this.setWidget(widget);
 
+//        NodeStorage nodeStorage = new NodeStorage();
+//        NodeLoader nodeLoader = new NodeLoader();
+//        tree = new Tree(nodeStorage, nodeLoader);
+//        tree.getSelectionModel().setSelectionMode(SelectionModel.Mode.SINGLE);
+//        tree.getSelectionModel().addSelectionChangedHandler(new SelectionChangedEvent.SelectionChangedHandler() {
+//            @Override
+//            public void onSelectionChanged(SelectionChangedEvent event) {
+//                List<Node> selection = event.getSelection();
+//                if (!selection.isEmpty()) {
+//                    delegate.onNodeSelected(selection.get(0));
+//                }
+//            }
+//        });
+//        tree.setPresentationRenderer(new ChangedListRender(tree.getTreeStyles()));
+//        changedFilesPanel.add(tree);
+
         btnCancel = createButton(locale.buttonCancel(), "git-commit-cancel", new ClickHandler() {
 
             @Override
@@ -117,6 +133,89 @@ public class CommitViewImpl extends Window implements CommitView {
         addButtonToFooter(btnCommit);
         addButtonToFooter(btnCancel);
     }
+
+//    private class ChangedListRender extends DefaultPresentationRenderer<Node> {
+//        ChangedListRender(TreeStyles treeStyles) {
+//            super(treeStyles);
+//        }
+//
+//        @Override
+//        public Element render(Node node, String domID, Tree.Joint joint, int depth) {
+//            NodePresentation presentation;
+//            if (node instanceof HasPresentation) {
+//                presentation = ((HasPresentation)node).getPresentation(false);
+//            } else {
+//                presentation = new NodePresentation();
+//                presentation.setPresentableText(node.getName());
+//            }
+//
+//            Element rootContainer = getRootContainer(domID);
+//
+//            Element nodeContainer = getNodeContainer();
+//
+//            nodeContainer.getStyle().setPaddingLeft((double)depth * 16, Style.Unit.PX);
+//
+//            Element jointContainer = getJointContainer(joint);
+//
+//            Element iconContainer = getIconContainer(presentation.getPresentableIcon());
+//
+//            Element userElement = getUserElement(presentation.getUserElement());
+//
+//            Element presentableTextContainer = getPresentableTextContainer(createPresentableTextElement(presentation));
+//
+//            Element infoTextContainer = getInfoTextContainer(createInfoTextElement(presentation));
+//
+//            Element descendantsContainer = getDescendantsContainer();
+//
+//            nodeContainer.appendChild(jointContainer);
+//            nodeContainer.appendChild(iconContainer);
+//            nodeContainer.appendChild(new CheckBox().getElement());
+//            nodeContainer.appendChild(userElement == null ? Document.get().createSpanElement() : userElement);
+//            nodeContainer.appendChild(presentableTextContainer);
+//            nodeContainer.appendChild(infoTextContainer);
+//
+//            rootContainer.appendChild(nodeContainer);
+//            rootContainer.appendChild(descendantsContainer);
+//
+//            return rootContainer;
+//        }
+//
+//        private Element createInfoTextElement(NodePresentation presentation) {
+//            DivElement textElement = Document.get().createDivElement();
+//
+//            StringBuilder sb = new StringBuilder();
+//
+//            if (presentation.getInfoTextWrapper() != null) {
+//                sb.append(presentation.getInfoTextWrapper().first);
+//            }
+//
+//            if (!Strings.isNullOrEmpty(presentation.getInfoText())) {
+//                sb.append(presentation.getInfoText());
+//            }
+//
+//            if (presentation.getInfoTextWrapper() != null) {
+//                sb.append(presentation.getInfoTextWrapper().second);
+//            }
+//
+//            textElement.setInnerText(sb.toString());
+//            textElement.setAttribute("style", presentation.getInfoTextCss());
+//
+//            //TODO support text colorization
+//
+//            return textElement;
+//        }
+//
+//        private Element createPresentableTextElement(NodePresentation presentation) {
+//            DivElement textElement = Document.get().createDivElement();
+//
+//            textElement.setInnerText(Strings.nullToEmpty(presentation.getPresentableText()));
+//            textElement.setAttribute("style", presentation.getPresentableTextCss());
+//
+//            //TODO support text colorization
+//
+//            return textElement;
+//        }
+//    }
 
     @Override
     protected void onEnterClicked() {

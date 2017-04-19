@@ -25,9 +25,11 @@ import org.eclipse.che.ide.api.resources.Project;
 import org.eclipse.che.ide.ext.git.client.GitLocalizationConstant;
 import org.eclipse.che.ide.ext.git.client.compare.ComparePresenter;
 import org.eclipse.che.ide.ext.git.client.compare.FileStatus.Status;
+import org.eclipse.che.ide.ext.git.client.tree.ChangedFileNode;
+import org.eclipse.che.ide.ext.git.client.tree.ChangedFolderNode;
+import org.eclipse.che.ide.ext.git.client.tree.TreeCallBack;
+import org.eclipse.che.ide.ext.git.client.tree.TreePresenter;
 import org.eclipse.che.ide.resource.Path;
-
-import javax.validation.constraints.NotNull;
 
 import java.util.Map;
 
@@ -42,28 +44,26 @@ import static org.eclipse.che.ide.api.notification.StatusNotification.Status.FAI
  */
 @Singleton
 public class ChangedListPresenter implements ChangedListView.ActionDelegate {
-    private final ChangedListView         view;
-    private final NotificationManager     notificationManager;
-    private final GitLocalizationConstant locale;
-    private final ComparePresenter        comparePresenter;
+    private final ChangedListView     view;
+    private final NotificationManager notificationManager;
+    private final TreePresenter       treePresenter;
+    private final ComparePresenter    comparePresenter;
 
-    private Map<String, Status> changedFiles;
-    private Project             project;
-    private String              file;
-    private String              revisionA;
-    private String              revisionB;
-    private Status              status;
-    private boolean             treeViewEnabled;
+    private Project project;
+    private String  file;
+    private String  revisionA;
+    private String  revisionB;
+    private Status  status;
 
     @Inject
     public ChangedListPresenter(ChangedListView view,
+                                TreePresenter treePresenter,
                                 ComparePresenter comparePresenter,
-                                NotificationManager notificationManager,
-                                GitLocalizationConstant locale) {
+                                NotificationManager notificationManager) {
+        this.treePresenter = treePresenter;
         this.comparePresenter = comparePresenter;
         this.view = view;
         this.notificationManager = notificationManager;
-        this.locale = locale;
         this.view.setDelegate(this);
     }
 
@@ -80,16 +80,33 @@ public class ChangedListPresenter implements ChangedListView.ActionDelegate {
      *         If it is set to {@code null}, compare with latest repository state will be performed
      */
     public void show(Map<String, Status> changedFiles, @Nullable String revisionA, @Nullable String revisionB, Project project) {
-        this.changedFiles = changedFiles;
         this.project = project;
         this.revisionA = revisionA;
         this.revisionB = revisionB;
 
         view.setEnableCompareButton(false);
-        view.setEnableExpandCollapseButtons(treeViewEnabled);
+
+        TreeCallBack callBack = new TreeCallBack() {
+            @Override
+            public void onFileNodeDoubleClicked() {
+                showCompare();
+            }
+
+            @Override
+            public void onNodeSelected(Node node) {
+                if (node instanceof ChangedFolderNode) {
+                    view.setEnableCompareButton(false);
+                    return;
+                }
+                view.setEnableCompareButton(true);
+                ChangedListPresenter.this.file = node.getName();
+                ChangedListPresenter.this.status = ((ChangedFileNode)node).getStatus();
+            }
+        };
+
+        treePresenter.show(changedFiles, callBack);
 
         view.showDialog();
-        viewChangedFiles();
     }
 
     @Override
@@ -100,49 +117,6 @@ public class ChangedListPresenter implements ChangedListView.ActionDelegate {
     @Override
     public void onCompareClicked() {
         showCompare();
-    }
-
-    @Override
-    public void onFileNodeDoubleClicked() {
-        showCompare();
-    }
-
-    @Override
-    public void onChangeViewModeButtonClicked() {
-        treeViewEnabled = !treeViewEnabled;
-        viewChangedFiles();
-        view.setEnableExpandCollapseButtons(treeViewEnabled);
-    }
-
-    @Override
-    public void onExpandButtonClicked() {
-        view.expandAllDirectories();
-    }
-
-    @Override
-    public void onCollapseButtonClicked() {
-        view.collapseAllDirectories();
-    }
-
-    @Override
-    public void onNodeSelected(@NotNull Node node) {
-        if (node instanceof ChangedFolderNode) {
-            view.setEnableCompareButton(false);
-            return;
-        }
-        view.setEnableCompareButton(true);
-        this.file = node.getName();
-        this.status = ((ChangedFileNode)node).getStatus();
-    }
-
-    private void viewChangedFiles() {
-        if (treeViewEnabled) {
-            view.viewChangedFilesAsTree(changedFiles);
-            view.setTextToChangeViewModeButton(locale.changeListRowListViewButtonText());
-        } else {
-            view.viewChangedFilesAsList(changedFiles);
-            view.setTextToChangeViewModeButton(locale.changeListGroupByDirectoryButtonText());
-        }
     }
 
     private void showCompare() {

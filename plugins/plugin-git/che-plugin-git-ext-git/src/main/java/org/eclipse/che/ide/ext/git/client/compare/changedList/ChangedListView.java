@@ -30,51 +30,7 @@ public interface ChangedListView extends View<ChangedListView.ActionDelegate> {
 
         /** Performs any actions appropriate in response to the user having pressed the 'Compare' button. */
         void onCompareClicked();
-
-        /**
-         * Performs any actions appropriate in response to the user having pressed the button that changes view mode of changed files.
-         */
-        void onChangeViewModeButtonClicked();
-
-        /** Performs any actions appropriate in response to the user having pressed the 'Expand all directories' button. */
-        void onExpandButtonClicked();
-
-        /** Performs any actions appropriate in response to the user having pressed the 'Collapse all directories' button. */
-        void onCollapseButtonClicked();
-
-        /**
-         * Performs any action in response to the user having select any node.
-         *
-         * @param node
-         *         selected node
-         */
-        void onNodeSelected(@NotNull Node node);
-
-        /** Performs any actions appropriate in response to the user double clicked on the file node. */
-        void onFileNodeDoubleClicked();
     }
-
-    /**
-     * View changed files as list.
-     *
-     * @param files
-     *         Map of changed files with their status
-     */
-    void viewChangedFilesAsList(@NotNull Map<String, Status> files);
-
-    /**
-     * View changed files as tree.
-     *
-     * @param files
-     *         Map of changed files with their status
-     */
-    void viewChangedFilesAsTree(@NotNull Map<String, Status> files);
-
-    /** Expand all directories in tree. */
-    void expandAllDirectories();
-
-    /** Collapse all directories in tree. */
-    void collapseAllDirectories();
 
     /** Close dialog. */
     void close();
@@ -89,20 +45,4 @@ public interface ChangedListView extends View<ChangedListView.ActionDelegate> {
      *         <code>true</code> to enable the button, <code>false</code> to disable it
      */
     void setEnableCompareButton(boolean enabled);
-
-    /**
-     * Change the enable state of the 'Expand/Collapse all directories' buttons.
-     *
-     * @param enabled
-     *         <code>true</code> to enable the buttons, <code>false</code> to disable them
-     */
-    void setEnableExpandCollapseButtons(boolean enabled);
-
-    /**
-     * Set displayed text to button that changes view mode of changed files.
-     *
-     * @param text
-     *         text that will be displayed in the button
-     */
-    void setTextToChangeViewModeButton(@NotNull String text);
 }

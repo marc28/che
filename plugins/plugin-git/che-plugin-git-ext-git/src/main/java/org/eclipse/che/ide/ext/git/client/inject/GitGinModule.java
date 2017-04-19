@@ -58,6 +58,8 @@ import org.eclipse.che.ide.ext.git.client.reset.commit.ResetToCommitView;
 import org.eclipse.che.ide.ext.git.client.reset.commit.ResetToCommitViewImpl;
 import org.eclipse.che.ide.ext.git.client.reset.files.ResetFilesView;
 import org.eclipse.che.ide.ext.git.client.reset.files.ResetFilesViewImpl;
+import org.eclipse.che.ide.ext.git.client.tree.TreeView;
+import org.eclipse.che.ide.ext.git.client.tree.TreeViewImpl;
 
 /** @author Andrey Plotnikov */
 @ExtensionGinModule
@@ -86,6 +88,7 @@ public class GitGinModule extends AbstractGinModule {
         bind(PullView.class).to(PullViewImpl.class).in(Singleton.class);
         bind(HistoryView.class).to(HistoryViewImpl.class).in(Singleton.class);
         bind(GitOutputPartView.class).to(GitOutputPartViewImpl.class);
+        bind(TreeView.class).to(TreeViewImpl.class);
 
         install(new GinFactoryModuleBuilder().implement(GitOutputConsole.class, GitOutputConsolePresenter.class)
                                              .build(GitOutputConsoleFactory.class));
