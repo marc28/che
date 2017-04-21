@@ -11,8 +11,12 @@
 package org.eclipse.che.ide.ext.git.client.commit;
 
 import org.eclipse.che.ide.api.mvp.View;
+import org.eclipse.che.ide.ext.git.client.compare.FileStatus;
+import org.eclipse.che.ide.ext.git.client.tree.TreeCallBack;
+import org.eclipse.che.ide.ext.git.client.tree.TreeView;
 
 import javax.validation.constraints.NotNull;
+import java.util.Map;
 
 /**
  * The view of {@link CommitPresenter}.
@@ -50,53 +54,6 @@ public interface CommitView extends View<CommitView.ActionDelegate> {
     void setMessage(@NotNull String message);
 
     /**
-     * Returns <code>true</code> if need to add all changes to index except from new files before commit, and <code>false</code> otherwise
-     */
-    boolean isAddAllExceptNew();
-
-    /**
-     * Set status of flag that represents add all changes to index except from new files before commit.
-     *
-     * @param addAllExceptNew
-     *         <code>true</code> if need to add all changes to index except from new files before commit,
-     *         <code>false</code> otherwise
-     */
-    void setAddAllExceptNew(boolean addAllExceptNew);
-
-    /** Returns true if the selection must be added to index before commit, and <code>false</code> otherwise. */
-    boolean isAddSelectedFiles();
-
-    /**
-     * Sets the status of flag that represents add selected files.
-     *
-     * @param addSelectedFiles
-     *         <code>true</code> if need to add selected files before commit, <code>false</code> otherwise
-     */
-    void setAddSelectedFiles(boolean addSelectedFiles);
-
-    /** Returns <code>true</code> if need to commit all files in the project, and <code>false</code> otherwise. */
-    boolean isCommitAllFiles();
-
-    /**
-     * Sets the status of flag that represents add selected files.
-     *
-     * @param commitAllFiles
-     *         <code>true</code> if need to add selected files before commit, <code>false</code> otherwise
-     */
-    void setCommitAllFiles(boolean commitAllFiles);
-
-    /** Returns <code>true</code> if need to amend the last commit, and <code>false</code> otherwise. */
-    boolean isAmend();
-
-    /**
-     * Set status of amend the last commit.
-     *
-     * @param isAmend
-     *         <code>true</code> need to amend the last commit, <code>false</code> need to create new commit
-     */
-    void setAmend(boolean isAmend);
-
-    /**
      * Change the enable state of the commit button.
      *
      * @param enable
@@ -111,5 +68,5 @@ public interface CommitView extends View<CommitView.ActionDelegate> {
     void close();
 
     /** Show dialog. */
-    void showDialog();
+    void showDialog(TreeView treeView);
 }

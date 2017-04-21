@@ -10,16 +10,21 @@
  *******************************************************************************/
 package org.eclipse.che.ide.ext.git.client.compare.changedList;
 
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
+import com.google.gwt.uibinder.client.UiBinder;
+import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.HTML;
+import com.google.gwt.user.client.ui.Widget;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 import org.eclipse.che.ide.ext.git.client.GitLocalizationConstant;
+import org.eclipse.che.ide.ext.git.client.commit.CommitViewImpl;
 import org.eclipse.che.ide.ext.git.client.tree.TreeView;
 import org.eclipse.che.ide.ui.window.Window;
 
@@ -30,6 +35,13 @@ import org.eclipse.che.ide.ui.window.Window;
  */
 @Singleton
 public class ChangedListViewImpl extends Window implements ChangedListView {
+    @UiField(provided = true)
+    TreeView treeView;
+
+    interface ChangedListViewImplUiBinder extends UiBinder<Widget, ChangedListViewImpl> {
+    }
+
+    private static ChangedListViewImplUiBinder uiBinder = GWT.create(ChangedListViewImplUiBinder.class);
 
     private final GitLocalizationConstant locale;
 
@@ -37,15 +49,9 @@ public class ChangedListViewImpl extends Window implements ChangedListView {
     private Button         btnCompare;
 
     @Inject
-    protected ChangedListViewImpl(TreeView treeView,
-                                  GitLocalizationConstant locale) {
+    protected ChangedListViewImpl(GitLocalizationConstant locale) {
         this.locale = locale;
-
-        FlowPanel widget = new FlowPanel();
-
         this.setTitle(locale.changeListTitle());
-        widget.add(treeView);
-        this.setWidget(widget);
 
         createButtons();
 
@@ -85,7 +91,12 @@ public class ChangedListViewImpl extends Window implements ChangedListView {
 
     /** {@inheritDoc} */
     @Override
-    public void showDialog() {
+    public void showDialog(TreeView treeView) {
+        if (this.treeView == null) {
+            this.treeView = treeView;
+            Widget widget = uiBinder.createAndBindUi(this);
+            this.setWidget(widget);
+        }
         this.show();
     }
 

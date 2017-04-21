@@ -21,6 +21,7 @@ import org.eclipse.che.api.promises.client.Operation;
 import org.eclipse.che.api.promises.client.OperationException;
 import org.eclipse.che.api.promises.client.PromiseError;
 import org.eclipse.che.ide.api.app.AppContext;
+import org.eclipse.che.ide.api.data.tree.Node;
 import org.eclipse.che.ide.api.dialogs.DialogFactory;
 import org.eclipse.che.ide.api.git.GitServiceClient;
 import org.eclipse.che.ide.api.notification.NotificationManager;
@@ -29,13 +30,18 @@ import org.eclipse.che.ide.api.resources.Resource;
 import org.eclipse.che.ide.commons.exception.ServerException;
 import org.eclipse.che.ide.ext.git.client.DateTimeFormatter;
 import org.eclipse.che.ide.ext.git.client.GitLocalizationConstant;
+import org.eclipse.che.ide.ext.git.client.compare.FileStatus.Status;
 import org.eclipse.che.ide.ext.git.client.outputconsole.GitOutputConsole;
 import org.eclipse.che.ide.ext.git.client.outputconsole.GitOutputConsoleFactory;
+import org.eclipse.che.ide.ext.git.client.tree.TreeCallBack;
+import org.eclipse.che.ide.ext.git.client.tree.TreePresenter;
 import org.eclipse.che.ide.extension.machine.client.processes.panel.ProcessesPanelPresenter;
 import org.eclipse.che.ide.resource.Path;
 
 import javax.validation.constraints.NotNull;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkState;
 import static org.eclipse.che.ide.api.notification.StatusNotification.DisplayMode.FLOAT_MODE;
@@ -54,7 +60,8 @@ import static org.eclipse.che.ide.util.ExceptionUtils.getErrorCode;
 public class CommitPresenter implements CommitView.ActionDelegate {
     private static final String COMMIT_COMMAND_NAME = "Git commit";
 
-    private final DialogFactory           dialogFactory;
+    private final TreePresenter treePresenter;
+    private final DialogFactory dialogFactory;
     private final AppContext              appContext;
     private final CommitView              view;
     private final GitServiceClient        service;
@@ -69,6 +76,7 @@ public class CommitPresenter implements CommitView.ActionDelegate {
     @Inject
     public CommitPresenter(CommitView view,
                            GitServiceClient service,
+                           TreePresenter treePresenter,
                            GitLocalizationConstant constant,
                            NotificationManager notificationManager,
                            DialogFactory dialogFactory,
@@ -77,6 +85,7 @@ public class CommitPresenter implements CommitView.ActionDelegate {
                            GitOutputConsoleFactory gitOutputConsoleFactory,
                            ProcessesPanelPresenter processesPanelPresenter) {
         this.view = view;
+        this.treePresenter = treePresenter;
         this.dialogFactory = dialogFactory;
         this.appContext = appContext;
         this.dateTimeFormatter = dateTimeFormatter;
@@ -91,12 +100,22 @@ public class CommitPresenter implements CommitView.ActionDelegate {
     public void showDialog(Project project) {
         this.project = project;
 
-        view.setAddAllExceptNew(false);
-        view.setAddSelectedFiles(false);
-        view.setCommitAllFiles(false);
-        view.setAmend(false);
         view.setEnableCommitButton(!view.getMessage().isEmpty());
-        view.showDialog();
+        HashMap<String, Status> map = new HashMap<>();
+        map.put("sdgsdfhdh", Status.ADDED);
+        TreeCallBack callBack = new TreeCallBack() {
+            @Override
+            public void onFileNodeDoubleClicked() {
+
+            }
+
+            @Override
+            public void onNodeSelected(Node node) {
+
+            }
+        };
+        view.showDialog(treePresenter.getView());
+        treePresenter.show(map, callBack);
         view.focusInMessageField();
     }
 
@@ -104,16 +123,6 @@ public class CommitPresenter implements CommitView.ActionDelegate {
     @Override
     public void onCommitClicked() {
         final String message = view.getMessage();
-        final boolean addAll = view.isAddAllExceptNew();
-        final boolean addSelected = view.isAddSelectedFiles();
-        final boolean commitAll = view.isCommitAllFiles();
-        final boolean amend = view.isAmend();
-
-        if (addSelected) {
-            addSelectedAndCommit(message, commitAll, amend);
-        } else {
-            doCommit(message, addAll, commitAll, amend);
-        }
     }
 
     private void addSelectedAndCommit(final String message, final boolean commitAll, final boolean amend) {

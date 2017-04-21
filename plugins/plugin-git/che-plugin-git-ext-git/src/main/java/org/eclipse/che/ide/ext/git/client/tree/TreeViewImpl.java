@@ -10,12 +10,20 @@
  *******************************************************************************/
 package org.eclipse.che.ide.ext.git.client.tree;
 
+import com.google.common.base.Strings;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.dom.client.DivElement;
+import com.google.gwt.dom.client.Document;
+import com.google.gwt.dom.client.Element;
+import com.google.gwt.dom.client.Style;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.logical.shared.ValueChangeEvent;
+import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.DockLayoutPanel;
 import com.google.gwt.user.client.ui.LayoutPanel;
@@ -33,8 +41,12 @@ import org.eclipse.che.ide.ui.smartTree.NodeLoader;
 import org.eclipse.che.ide.ui.smartTree.NodeStorage;
 import org.eclipse.che.ide.ui.smartTree.SelectionModel;
 import org.eclipse.che.ide.ui.smartTree.Tree;
+import org.eclipse.che.ide.ui.smartTree.TreeStyles;
 import org.eclipse.che.ide.ui.smartTree.compare.NameComparator;
 import org.eclipse.che.ide.ui.smartTree.event.SelectionChangedEvent;
+import org.eclipse.che.ide.ui.smartTree.presentation.DefaultPresentationRenderer;
+import org.eclipse.che.ide.ui.smartTree.presentation.HasPresentation;
+import org.eclipse.che.ide.ui.smartTree.presentation.NodePresentation;
 
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
@@ -48,7 +60,7 @@ import java.util.Map;
  *
  * @author Igor Vinokur
  */
-@Singleton
+//@Singleton
 public class TreeViewImpl extends Composite implements TreeView {
     interface ChangedListViewImplUiBinder extends UiBinder<DockLayoutPanel, TreeViewImpl> {
     }
@@ -72,9 +84,9 @@ public class TreeViewImpl extends Composite implements TreeView {
     private ActionDelegate delegate;
     private Tree           tree;
 
-    private final NodesResources nodesResources;
+    private final NodesResources       nodesResources;
 
-    @Inject
+//    @Inject
     public TreeViewImpl(GitResources resources,
                         GitLocalizationConstant locale,
                         NodesResources nodesResources) {
@@ -84,24 +96,114 @@ public class TreeViewImpl extends Composite implements TreeView {
 
         initWidget(uiBinder.createAndBindUi(this));
 
-        this.setTitle(locale.changeListTitle());
-
         NodeStorage nodeStorage = new NodeStorage();
         NodeLoader nodeLoader = new NodeLoader();
         tree = new Tree(nodeStorage, nodeLoader);
         tree.getSelectionModel().setSelectionMode(SelectionModel.Mode.SINGLE);
-        tree.getSelectionModel().addSelectionChangedHandler(new SelectionChangedEvent.SelectionChangedHandler() {
-            @Override
-            public void onSelectionChanged(SelectionChangedEvent event) {
-                List<Node> selection = event.getSelection();
-                if (!selection.isEmpty()) {
-                    delegate.onNodeSelected(selection.get(0));
+        tree.getSelectionModel()
+            .addSelectionChangedHandler(new SelectionChangedEvent.SelectionChangedHandler() {
+                @Override
+                public void onSelectionChanged(SelectionChangedEvent event) {
+                    List<Node> selection = event.getSelection();
+                    if (!selection.isEmpty()) {
+                        delegate.onNodeSelected(selection.get(0));
+                    }
                 }
-            }
-        });
+            });
+        tree.setPresentationRenderer(new ChangedListRender(tree.getTreeStyles()));
         changedFilesPanel.add(tree);
 
         createButtons();
+    }
+
+    private class ChangedListRender extends DefaultPresentationRenderer<Node> {
+        ChangedListRender(TreeStyles treeStyles) {
+            super(treeStyles);
+        }
+
+        @Override
+        public Element render(final Node node, String domID, Tree.Joint joint, int depth) {
+            NodePresentation presentation;
+            if (node instanceof HasPresentation) {
+                presentation = ((HasPresentation)node).getPresentation(false);
+            } else {
+                presentation = new NodePresentation();
+                presentation.setPresentableText(node.getName());
+            }
+
+            Element rootContainer = getRootContainer(domID);
+
+            Element nodeContainer = getNodeContainer();
+
+            nodeContainer.getStyle().setPaddingLeft((double)depth * 16, Style.Unit.PX);
+
+            Element jointContainer = getJointContainer(joint);
+
+            Element iconContainer = getIconContainer(presentation.getPresentableIcon());
+
+            Element userElement = getUserElement(presentation.getUserElement());
+
+            Element presentableTextContainer = getPresentableTextContainer(createPresentableTextElement(presentation));
+
+            Element infoTextContainer = getInfoTextContainer(createInfoTextElement(presentation));
+
+            Element descendantsContainer = getDescendantsContainer();
+
+            CheckBox checkBox = new CheckBox();
+            checkBox.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
+                @Override
+                public void onValueChange(ValueChangeEvent<Boolean> event) {
+//                    statusMap.replace(node.getName(), event.getValue());
+                }
+            });
+            nodeContainer.appendChild(jointContainer);
+            nodeContainer.appendChild(iconContainer);
+            nodeContainer.appendChild(checkBox.getElement());
+            nodeContainer.appendChild(userElement == null ? Document.get().createSpanElement() : userElement);
+            nodeContainer.appendChild(presentableTextContainer);
+            nodeContainer.appendChild(infoTextContainer);
+
+            rootContainer.appendChild(nodeContainer);
+            rootContainer.appendChild(descendantsContainer);
+
+            return rootContainer;
+        }
+
+        private Element createInfoTextElement(NodePresentation presentation) {
+            DivElement textElement = Document.get().createDivElement();
+
+            StringBuilder sb = new StringBuilder();
+
+            if (presentation.getInfoTextWrapper() != null) {
+                sb.append(presentation.getInfoTextWrapper().first);
+            }
+
+            if (!Strings.isNullOrEmpty(presentation.getInfoText())) {
+                sb.append(presentation.getInfoText());
+            }
+
+            if (presentation.getInfoTextWrapper() != null) {
+                sb.append(presentation.getInfoTextWrapper().second);
+            }
+
+            textElement.setInnerText(sb.toString());
+            textElement.setAttribute("style", presentation.getInfoTextCss());
+
+            //TODO support text colorization
+
+            return textElement;
+        }
+
+        private Element createPresentableTextElement(NodePresentation presentation) {
+            DivElement textElement = Document.get().createDivElement();
+
+            textElement.setInnerText(Strings.nullToEmpty(presentation.getPresentableText()));
+            textElement.setAttribute("style", presentation.getPresentableTextCss());
+
+            //TODO support text colorization
+
+            return textElement;
+        }
     }
 
     /** {@inheritDoc} */

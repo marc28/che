@@ -18,8 +18,11 @@ import org.eclipse.che.ide.api.data.tree.Node;
 import org.eclipse.che.ide.api.notification.NotificationManager;
 import org.eclipse.che.ide.api.resources.Project;
 import org.eclipse.che.ide.ext.git.client.GitLocalizationConstant;
+import org.eclipse.che.ide.ext.git.client.GitResources;
 import org.eclipse.che.ide.ext.git.client.compare.ComparePresenter;
 import org.eclipse.che.ide.ext.git.client.compare.FileStatus.Status;
+import org.eclipse.che.ide.project.shared.NodesResources;
+import org.eclipse.che.ide.ui.smartTree.Tree;
 
 import javax.validation.constraints.NotNull;
 import java.util.Map;
@@ -30,7 +33,7 @@ import java.util.Map;
  * @author Igor Vinokur
  * @author Vlad Zhukovskyi
  */
-@Singleton
+//@Singleton
 public class TreePresenter implements TreeView.ActionDelegate {
     private final TreeView                view;
     private final GitLocalizationConstant locale;
@@ -40,9 +43,8 @@ public class TreePresenter implements TreeView.ActionDelegate {
     private boolean             treeViewEnabled;
 
     @Inject
-    public TreePresenter(TreeView view,
-                         GitLocalizationConstant locale) {
-        this.view = view;
+    public TreePresenter(GitResources resources, GitLocalizationConstant locale, NodesResources nodesResources) {
+        this.view = new TreeViewImpl(resources, locale, nodesResources);
         this.locale = locale;
         this.view.setDelegate(this);
     }
@@ -62,6 +64,10 @@ public class TreePresenter implements TreeView.ActionDelegate {
 
 
         viewChangedFiles();
+    }
+
+    public TreeView getView() {
+        return view;
     }
 
     @Override

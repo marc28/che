@@ -12,14 +12,16 @@
 -->
 <!DOCTYPE ui:UiBinder SYSTEM "http://dl.google.com/gwt/DTD/xhtml.ent">
 <ui:UiBinder xmlns:ui='urn:ui:com.google.gwt.uibinder'
-             xmlns:g='urn:import:com.google.gwt.user.client.ui'>
-    <ui:with field='res' type='org.eclipse.che.ide.ext.git.client.GitResources'/>
-    <ui:with field='locale' type='org.eclipse.che.ide.ext.git.client.GitLocalizationConstant'/>
+             xmlns:g='urn:import:com.google.gwt.user.client.ui'
+             xmlns:che='urn:import:org.eclipse.che.ide.ext.git.client.tree'>
     <ui:style>
         .space {
             margin-right: 5px;
         }
     </ui:style>
 
-    <g:FlowPanel ui:field="changedFilesPanel" addStyleNames="{res.gitCSS.simpleListContainer}"/>
+
+    <g:FlowPanel>
+        <che:TreeView ui:field="treeView"/>
+    </g:FlowPanel>
 </ui:UiBinder>

@@ -13,6 +13,7 @@ package org.eclipse.che.ide.ext.git.client.compare.changedList;
 import org.eclipse.che.ide.api.mvp.View;
 import org.eclipse.che.ide.api.data.tree.Node;
 import org.eclipse.che.ide.ext.git.client.compare.FileStatus.Status;
+import org.eclipse.che.ide.ext.git.client.tree.TreeView;
 
 import javax.validation.constraints.NotNull;
 import java.util.Map;
@@ -36,7 +37,7 @@ public interface ChangedListView extends View<ChangedListView.ActionDelegate> {
     void close();
 
     /** Show dialog. */
-    void showDialog();
+    void showDialog(TreeView treeView);
 
     /**
      * Change the enable state of the compare button.

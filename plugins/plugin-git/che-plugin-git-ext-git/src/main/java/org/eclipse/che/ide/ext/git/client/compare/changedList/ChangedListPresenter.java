@@ -22,7 +22,6 @@ import org.eclipse.che.ide.api.data.tree.Node;
 import org.eclipse.che.ide.api.notification.NotificationManager;
 import org.eclipse.che.ide.api.resources.File;
 import org.eclipse.che.ide.api.resources.Project;
-import org.eclipse.che.ide.ext.git.client.GitLocalizationConstant;
 import org.eclipse.che.ide.ext.git.client.compare.ComparePresenter;
 import org.eclipse.che.ide.ext.git.client.compare.FileStatus.Status;
 import org.eclipse.che.ide.ext.git.client.tree.ChangedFileNode;
@@ -46,7 +45,7 @@ import static org.eclipse.che.ide.api.notification.StatusNotification.Status.FAI
 public class ChangedListPresenter implements ChangedListView.ActionDelegate {
     private final ChangedListView     view;
     private final NotificationManager notificationManager;
-    private final TreePresenter       treePresenter;
+    private final TreePresenter treePresenter;
     private final ComparePresenter    comparePresenter;
 
     private Project project;
@@ -57,13 +56,13 @@ public class ChangedListPresenter implements ChangedListView.ActionDelegate {
 
     @Inject
     public ChangedListPresenter(ChangedListView view,
-                                TreePresenter treePresenter,
                                 ComparePresenter comparePresenter,
-                                NotificationManager notificationManager) {
-        this.treePresenter = treePresenter;
+                                NotificationManager notificationManager,
+                                TreePresenter treePresenter) {
         this.comparePresenter = comparePresenter;
         this.view = view;
         this.notificationManager = notificationManager;
+        this.treePresenter = treePresenter;
         this.view.setDelegate(this);
     }
 
@@ -105,8 +104,8 @@ public class ChangedListPresenter implements ChangedListView.ActionDelegate {
         };
 
         treePresenter.show(changedFiles, callBack);
+        view.showDialog(treePresenter.getView());
 
-        view.showDialog();
     }
 
     @Override
