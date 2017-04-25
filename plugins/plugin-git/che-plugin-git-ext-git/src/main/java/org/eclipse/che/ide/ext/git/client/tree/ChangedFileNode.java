@@ -30,9 +30,11 @@ import java.util.List;
  *
  * @author Igor Vinokur
  */
-public class ChangedFileNode extends AbstractTreeNode implements HasPresentation, HasAction {
+public class ChangedFileNode extends AbstractTreeNode implements HasPresentation, HasAction, ChangedNode {
 
     private NodePresentation nodePresentation;
+
+    private boolean isSelected;
 
     private final String                  pathName;
     private final Status                  status;
@@ -96,6 +98,7 @@ public class ChangedFileNode extends AbstractTreeNode implements HasPresentation
         String name = Path.valueOf(pathName).lastSegment();
         presentation.setPresentableText(viewPath ? name : pathName);
         presentation.setPresentableIcon(nodesResources.file());
+        ((ChangedFolderNode.ChangedNodePresentation)presentation).setSelected(isSelected);
 
         switch (status) {
             case MODIFIED:
@@ -115,7 +118,7 @@ public class ChangedFileNode extends AbstractTreeNode implements HasPresentation
     @Override
     public NodePresentation getPresentation(boolean update) {
         if (nodePresentation == null) {
-            nodePresentation = new NodePresentation();
+            nodePresentation = new ChangedFolderNode.ChangedNodePresentation();
             updatePresentation(nodePresentation);
         }
         if (update) {
@@ -126,6 +129,16 @@ public class ChangedFileNode extends AbstractTreeNode implements HasPresentation
 
     @Override
     public void actionPerformed() {
-       actionDelegate.onFileNodeDoubleClicked();
+        actionDelegate.onFileNodeDoubleClicked();
+    }
+
+    @Override
+    public boolean isSelected() {
+        return isSelected;
+    }
+
+    @Override
+    public void setSelected(boolean selected) {
+        this.isSelected = selected;
     }
 }

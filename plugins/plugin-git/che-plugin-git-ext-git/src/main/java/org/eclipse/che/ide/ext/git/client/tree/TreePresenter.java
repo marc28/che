@@ -25,7 +25,11 @@ import org.eclipse.che.ide.project.shared.NodesResources;
 import org.eclipse.che.ide.ui.smartTree.Tree;
 
 import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Presenter for displaying list of changed files.
@@ -70,9 +74,24 @@ public class TreePresenter implements TreeView.ActionDelegate {
         return view;
     }
 
+    public Set<String> getUnselected() {
+        Set<String> unselected = new HashSet<>();
+        for (Node node : view.getNodes()) {
+            if (((ChangedNode)node).isSelected()) {
+                unselected.add(node.getName());
+            }
+        }
+        return unselected;
+    }
+
     @Override
     public void onFileNodeDoubleClicked() {
         callBack.onFileNodeDoubleClicked();
+    }
+
+    @Override
+    public void onFileNodeCheckBoxValueChanged(Node node) {
+        ((ChangedNode)node).setSelected(!((ChangedNode)node).isSelected());
     }
 
     @Override

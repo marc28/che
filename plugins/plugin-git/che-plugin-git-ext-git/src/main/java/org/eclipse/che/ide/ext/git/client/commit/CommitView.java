@@ -46,7 +46,7 @@ public interface CommitView extends View<CommitView.ActionDelegate> {
     String getMessage();
 
     /**
-     * Set content into message field.
+     * Set content into message filesPanel.
      *
      * @param message
      *         text what need to insert
@@ -61,14 +61,14 @@ public interface CommitView extends View<CommitView.ActionDelegate> {
      */
     void setEnableCommitButton(boolean enable);
 
-    /** Give focus to message field. */
+    /** Give focus to message filesPanel. */
     void focusInMessageField();
 
     /** Close dialog. */
     void close();
 
     /** Show dialog. */
-    void showDialog(TreeView treeView);
+    void showDialog();
 
     void setTreeView(TreeView treeView);
 }

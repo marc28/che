@@ -43,15 +43,12 @@ public class CommitViewImpl extends Window implements CommitView {
     interface CommitViewImplUiBinder extends UiBinder<Widget, CommitViewImpl> {
     }
 
-    private static CommitViewImplUiBinder ourUiBinder = GWT.create(CommitViewImplUiBinder.class);
+    private static CommitViewImplUiBinder uiBinder = GWT.create(CommitViewImplUiBinder.class);
 
-    /**
-     * The commit message input field.
-     */
     @UiField(provided = true)
     final TextArea message;
     @UiField
-    FlowPanel field;
+    FlowPanel filesPanel;
     @UiField(provided = true)
     final GitResources            res;
     @UiField(provided = true)
@@ -63,9 +60,6 @@ public class CommitViewImpl extends Window implements CommitView {
 
     /**
      * Create view.
-     *
-     * @param res
-     * @param locale
      */
     @Inject
     protected CommitViewImpl(GitResources res,
@@ -77,7 +71,7 @@ public class CommitViewImpl extends Window implements CommitView {
 
         this.setTitle(locale.commitTitle());
 
-        Widget widget = ourUiBinder.createAndBindUi(this);
+        Widget widget = uiBinder.createAndBindUi(this);
         this.setWidget(widget);
 
         btnCancel = createButton(locale.buttonCancel(), "git-commit-cancel", new ClickHandler() {
@@ -112,13 +106,11 @@ public class CommitViewImpl extends Window implements CommitView {
         }
     }
 
-    /** {@inheritDoc} */
     @NotNull
     @Override
     public String getMessage() {
         return message.getText();
     }
-
 
     @Override
     public void setMessage(@NotNull String message) {
@@ -147,21 +139,15 @@ public class CommitViewImpl extends Window implements CommitView {
     }
 
     @Override
-    public void showDialog(TreeView treeView) {
-//        if (this.treeView == null) {
-//            this.treeView = treeView;
-//            Widget widget = ourUiBinder.createAndBindUi(this);
-//            this.setWidget(widget);
-//        }
+    public void showDialog() {
         this.show();
     }
 
     @Override
     public void setTreeView(TreeView treeView) {
-        this.field.add(treeView);
+        this.filesPanel.add(treeView);
     }
 
-    /** {@inheritDoc} */
     @Override
     public void setDelegate(ActionDelegate delegate) {
         this.delegate = delegate;

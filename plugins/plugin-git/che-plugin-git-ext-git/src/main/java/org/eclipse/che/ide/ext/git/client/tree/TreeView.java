@@ -15,6 +15,7 @@ import org.eclipse.che.ide.api.mvp.View;
 import org.eclipse.che.ide.ext.git.client.compare.FileStatus.Status;
 
 import javax.validation.constraints.NotNull;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -43,10 +44,12 @@ public interface TreeView extends View<TreeView.ActionDelegate> {
          * @param node
          *         selected node
          */
-        void onNodeSelected(@NotNull Node node);
+        void onNodeSelected(Node node);
 
         /** Performs any actions appropriate in response to the user double clicked on the file node. */
         void onFileNodeDoubleClicked();
+
+        void onFileNodeCheckBoxValueChanged(Node node);
     }
 
     /**
@@ -70,6 +73,8 @@ public interface TreeView extends View<TreeView.ActionDelegate> {
 
     /** Collapse all directories in tree. */
     void collapseAllDirectories();
+
+    List<Node> getNodes();
 
     /**
      * Change the enable state of the 'Expand/Collapse all directories' buttons.

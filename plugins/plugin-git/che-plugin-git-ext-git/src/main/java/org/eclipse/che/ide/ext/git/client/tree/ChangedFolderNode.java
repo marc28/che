@@ -26,9 +26,10 @@ import java.util.List;
  *
  * @author Igor Vinokur
  */
-public class ChangedFolderNode extends AbstractTreeNode implements HasPresentation {
+public class ChangedFolderNode extends AbstractTreeNode implements HasPresentation, ChangedNode {
 
     private String           name;
+    private boolean          isSelected;
     private NodePresentation nodePresentation;
 
     private final NodesResources nodesResources;
@@ -65,12 +66,13 @@ public class ChangedFolderNode extends AbstractTreeNode implements HasPresentati
     public void updatePresentation(@NotNull NodePresentation presentation) {
         presentation.setPresentableText(name);
         presentation.setPresentableIcon(nodesResources.simpleFolder());
+        ((ChangedNodePresentation)presentation).setSelected(isSelected);
     }
 
     @Override
     public NodePresentation getPresentation(boolean update) {
         if (nodePresentation == null) {
-            nodePresentation = new NodePresentation();
+            nodePresentation = new ChangedNodePresentation();
             updatePresentation(nodePresentation);
         }
 
@@ -78,5 +80,27 @@ public class ChangedFolderNode extends AbstractTreeNode implements HasPresentati
             updatePresentation(nodePresentation);
         }
         return nodePresentation;
+    }
+
+    @Override
+    public boolean isSelected() {
+        return isSelected;
+    }
+
+    @Override
+    public void setSelected(boolean selected) {
+        this.isSelected = selected;
+    }
+
+    static class ChangedNodePresentation extends NodePresentation {
+        private boolean isSelected;
+
+        public boolean isSelected() {
+            return isSelected;
+        }
+
+        public void setSelected(boolean selected) {
+            isSelected = selected;
+        }
     }
 }

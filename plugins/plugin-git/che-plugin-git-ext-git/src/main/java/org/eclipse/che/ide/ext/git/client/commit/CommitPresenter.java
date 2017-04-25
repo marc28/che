@@ -11,6 +11,7 @@
 package org.eclipse.che.ide.ext.git.client.commit;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Optional;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
@@ -20,11 +21,13 @@ import org.eclipse.che.api.git.shared.Revision;
 import org.eclipse.che.api.promises.client.Operation;
 import org.eclipse.che.api.promises.client.OperationException;
 import org.eclipse.che.api.promises.client.PromiseError;
+import org.eclipse.che.ide.api.action.ActionEvent;
 import org.eclipse.che.ide.api.app.AppContext;
 import org.eclipse.che.ide.api.data.tree.Node;
 import org.eclipse.che.ide.api.dialogs.DialogFactory;
 import org.eclipse.che.ide.api.git.GitServiceClient;
 import org.eclipse.che.ide.api.notification.NotificationManager;
+import org.eclipse.che.ide.api.resources.File;
 import org.eclipse.che.ide.api.resources.Project;
 import org.eclipse.che.ide.api.resources.Resource;
 import org.eclipse.che.ide.commons.exception.ServerException;
@@ -44,9 +47,13 @@ import java.util.List;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.Collections.singletonList;
+import static org.eclipse.che.api.git.shared.DiffType.NAME_STATUS;
 import static org.eclipse.che.ide.api.notification.StatusNotification.DisplayMode.FLOAT_MODE;
 import static org.eclipse.che.ide.api.notification.StatusNotification.DisplayMode.NOT_EMERGE_MODE;
 import static org.eclipse.che.ide.api.notification.StatusNotification.Status.FAIL;
+import static org.eclipse.che.ide.ext.git.client.action.CompareWithLatestAction.REVISION;
+import static org.eclipse.che.ide.ext.git.client.compare.FileStatus.defineStatus;
 import static org.eclipse.che.ide.util.ExceptionUtils.getErrorCode;
 
 /**
@@ -60,8 +67,8 @@ import static org.eclipse.che.ide.util.ExceptionUtils.getErrorCode;
 public class CommitPresenter implements CommitView.ActionDelegate {
     private static final String COMMIT_COMMAND_NAME = "Git commit";
 
-    private final TreePresenter treePresenter;
-    private final DialogFactory dialogFactory;
+    private final TreePresenter           treePresenter;
+    private final DialogFactory           dialogFactory;
     private final AppContext              appContext;
     private final CommitView              view;
     private final GitServiceClient        service;
@@ -72,6 +79,8 @@ public class CommitPresenter implements CommitView.ActionDelegate {
     private final ProcessesPanelPresenter consolesPanelPresenter;
 
     private Project project;
+
+    private final TreeCallBack callBack;
 
     @Inject
     public CommitPresenter(CommitView view,
@@ -96,16 +105,7 @@ public class CommitPresenter implements CommitView.ActionDelegate {
         this.constant = constant;
         this.notificationManager = notificationManager;
 
-        this.view.setTreeView(treePresenter.getView());
-    }
-
-    public void showDialog(Project project) {
-        this.project = project;
-
-        view.setEnableCommitButton(!view.getMessage().isEmpty());
-        HashMap<String, Status> map = new HashMap<>();
-        map.put("sdgsdfhdh", Status.ADDED);
-        TreeCallBack callBack = new TreeCallBack() {
+        this.callBack = new TreeCallBack() {
             @Override
             public void onFileNodeDoubleClicked() {
 
@@ -116,12 +116,60 @@ public class CommitPresenter implements CommitView.ActionDelegate {
 
             }
         };
-        view.showDialog(treePresenter.getView());
-        treePresenter.show(map, callBack);
-        view.focusInMessageField();
+
+        this.view.setTreeView(treePresenter.getView());
     }
 
-    /** {@inheritDoc} */
+    public void showDialog(Project project) {
+        this.project = project;
+
+        view.setEnableCommitButton(!view.getMessage().isEmpty());
+        view.showDialog();
+        view.focusInMessageField();
+        actionPerformed();
+    }
+
+    public void actionPerformed() {
+
+        final Project project = appContext.getRootProject();
+        final Resource resource = appContext.getResource();
+
+        checkState(project != null, "Null project occurred");
+        checkState(project.getLocation().isPrefixOf(resource.getLocation()), "Given selected item is not descendant of given project");
+
+        final String selectedItemPath = resource.getLocation()
+                                                .removeFirstSegments(project.getLocation().segmentCount())
+                                                .removeTrailingSeparator()
+                                                .toString();
+
+        service.diff(appContext.getDevMachine(),
+                     project.getLocation(),
+                     selectedItemPath.isEmpty() ? null : singletonList(selectedItemPath),
+                     NAME_STATUS, false, 0, "HEAD", false)
+               .then(new Operation<String>() {
+                   @Override
+                   public void apply(String diff) throws OperationException {
+                       if (diff.isEmpty()) {
+                           dialogFactory.createMessageDialog(constant.compareMessageIdenticalContentTitle(),
+                                                             constant.compareMessageIdenticalContentText(), null).show();
+                       } else {
+                           final String[] changedFiles = diff.split("\n");
+                           Map<String, Status> items = new HashMap<>();
+                           for (String item : changedFiles) {
+                               items.put(item.substring(2, item.length()), defineStatus(item.substring(0, 1)));
+                           }
+                           treePresenter.show(items, callBack);
+                       }
+                   }
+               })
+               .catchError(new Operation<PromiseError>() {
+                   @Override
+                   public void apply(PromiseError arg) throws OperationException {
+                       notificationManager.notify(constant.diffFailed(), FAIL, NOT_EMERGE_MODE);
+                   }
+               });
+    }
+
     @Override
     public void onCommitClicked() {
         final String message = view.getMessage();
@@ -209,14 +257,12 @@ public class CommitPresenter implements CommitView.ActionDelegate {
         view.close();
     }
 
-    /** {@inheritDoc} */
     @Override
     public void onValueChanged() {
         String message = view.getMessage();
         view.setEnableCommitButton(!message.isEmpty());
     }
 
-    /** {@inheritDoc} */
     @Override
     public void setAmendCommitMessage() {
         service.log(appContext.getDevMachine(), project.getLocation(), null, false)

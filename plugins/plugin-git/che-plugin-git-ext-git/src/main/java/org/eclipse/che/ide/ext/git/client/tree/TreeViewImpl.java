@@ -15,13 +15,17 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.DivElement;
 import com.google.gwt.dom.client.Document;
 import com.google.gwt.dom.client.Element;
+import com.google.gwt.dom.client.InputElement;
 import com.google.gwt.dom.client.Style;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.MouseEvent;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
+import com.google.gwt.user.client.Event;
+import com.google.gwt.user.client.EventListener;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.Composite;
@@ -30,11 +34,14 @@ import com.google.gwt.user.client.ui.LayoutPanel;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import org.eclipse.che.api.promises.client.Operation;
+import org.eclipse.che.api.promises.client.OperationException;
 import org.eclipse.che.ide.FontAwesome;
 import org.eclipse.che.ide.api.data.tree.Node;
 import org.eclipse.che.ide.ext.git.client.GitLocalizationConstant;
 import org.eclipse.che.ide.ext.git.client.GitResources;
 import org.eclipse.che.ide.ext.git.client.compare.FileStatus.Status;
+import org.eclipse.che.ide.ext.git.client.tree.ChangedFolderNode.ChangedNodePresentation;
 import org.eclipse.che.ide.project.shared.NodesResources;
 import org.eclipse.che.ide.resource.Path;
 import org.eclipse.che.ide.ui.smartTree.NodeLoader;
@@ -52,15 +59,16 @@ import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Implementation of {@link TreeView}.
  *
  * @author Igor Vinokur
  */
-//@Singleton
 public class TreeViewImpl extends Composite implements TreeView {
     interface ChangedListViewImplUiBinder extends UiBinder<DockLayoutPanel, TreeViewImpl> {
     }
@@ -84,9 +92,9 @@ public class TreeViewImpl extends Composite implements TreeView {
     private ActionDelegate delegate;
     private Tree           tree;
 
-    private final NodesResources       nodesResources;
+    private final NodesResources nodesResources;
 
-//    @Inject
+    //    @Inject
     public TreeViewImpl(GitResources resources,
                         GitLocalizationConstant locale,
                         NodesResources nodesResources) {
@@ -122,12 +130,12 @@ public class TreeViewImpl extends Composite implements TreeView {
         }
 
         @Override
-        public Element render(final Node node, String domID, Tree.Joint joint, int depth) {
-            NodePresentation presentation;
+        public Element render(final Node node, final String domID, final Tree.Joint joint, final int depth) {
+            final NodePresentation presentation;
             if (node instanceof HasPresentation) {
                 presentation = ((HasPresentation)node).getPresentation(false);
             } else {
-                presentation = new NodePresentation();
+                presentation = new ChangedNodePresentation();
                 presentation.setPresentableText(node.getName());
             }
 
@@ -149,16 +157,30 @@ public class TreeViewImpl extends Composite implements TreeView {
 
             Element descendantsContainer = getDescendantsContainer();
 
-            CheckBox checkBox = new CheckBox();
-            checkBox.addValueChangeHandler(new ValueChangeHandler<Boolean>() {
+            final CheckBox checkBox = new CheckBox();
+            Element element = checkBox.getElement();
+            ((InputElement)element.getElementsByTagName("input").getItem(0))
+                    .setChecked(((ChangedNodePresentation)presentation).isSelected());
+            Event.sinkEvents(element, Event.ONCLICK);
+            Event.setEventListener(element, new EventListener() {
                 @Override
-                public void onValueChange(ValueChangeEvent<Boolean> event) {
-//                    statusMap.replace(node.getName(), event.getValue());
+                public void onBrowserEvent(Event event) {
+                    if (Event.ONCLICK == event.getTypeInt() && event.getTarget().getTagName().equalsIgnoreCase("label")) {
+//                        delegate.onFileNodeCheckBoxValueChanged(node);
+                        ((ChangedNodePresentation)presentation).setSelected(!((ChangedNode)node).isSelected());
+//                        ((ChangedNode)node).setSelected(!((ChangedNode)node).isSelected());
+                        for (Node node : tree.getAllChildNodes(Collections.singletonList(node), false)) {
+                            ((ChangedNodePresentation)((HasPresentation)node).getPresentation(false))
+                                    .setSelected(((ChangedNodePresentation)presentation).isSelected());
+//                            ((ChangedNode)node).setSelected(!((ChangedNode)node).isSelected());
+                        }
+//                        render(node, domID, joint, depth);
+                    }
                 }
             });
             nodeContainer.appendChild(jointContainer);
+            nodeContainer.appendChild(element);
             nodeContainer.appendChild(iconContainer);
-            nodeContainer.appendChild(checkBox.getElement());
             nodeContainer.appendChild(userElement == null ? Document.get().createSpanElement() : userElement);
             nodeContainer.appendChild(presentableTextContainer);
             nodeContainer.appendChild(infoTextContainer);
@@ -206,7 +228,6 @@ public class TreeViewImpl extends Composite implements TreeView {
         }
     }
 
-    /** {@inheritDoc} */
     @Override
     public void setDelegate(ActionDelegate delegate) {
         this.delegate = delegate;
@@ -237,6 +258,11 @@ public class TreeViewImpl extends Composite implements TreeView {
     @Override
     public void collapseAllDirectories() {
         tree.collapseAll();
+    }
+
+    @Override
+    public List<Node> getNodes() {
+        return tree.getRootNodes();
     }
 
     @Override
