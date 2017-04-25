@@ -35,7 +35,7 @@ import org.eclipse.che.ide.ext.git.client.outputconsole.GitOutputConsole;
 import org.eclipse.che.ide.ext.git.client.outputconsole.GitOutputConsoleFactory;
 import org.eclipse.che.ide.ext.git.client.tree.TreeCallBack;
 import org.eclipse.che.ide.ext.git.client.tree.TreePresenter;
-import org.eclipse.che.ide.extension.machine.client.processes.panel.ProcessesPanelPresenter;
+import org.eclipse.che.ide.processes.panel.ProcessesPanelPresenter;
 import org.eclipse.che.ide.resource.Path;
 
 import javax.validation.constraints.NotNull;
@@ -95,6 +95,8 @@ public class CommitPresenter implements CommitView.ActionDelegate {
         this.service = service;
         this.constant = constant;
         this.notificationManager = notificationManager;
+
+        this.view.setTreeView(treePresenter.getView());
     }
 
     public void showDialog(Project project) {

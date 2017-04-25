@@ -69,4 +69,6 @@ public interface CommitView extends View<CommitView.ActionDelegate> {
 
     /** Show dialog. */
     void showDialog(TreeView treeView);
+
+    void setTreeView(TreeView treeView);
 }

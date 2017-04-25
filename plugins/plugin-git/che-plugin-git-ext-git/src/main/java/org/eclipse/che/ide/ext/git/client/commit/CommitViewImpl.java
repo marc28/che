@@ -25,6 +25,7 @@ import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.Widget;
 import com.google.inject.Inject;
@@ -49,8 +50,8 @@ public class CommitViewImpl extends Window implements CommitView {
      */
     @UiField(provided = true)
     final TextArea message;
-    @UiField(provided = true)
-    TreeView treeView;
+    @UiField
+    FlowPanel field;
     @UiField(provided = true)
     final GitResources            res;
     @UiField(provided = true)
@@ -75,6 +76,9 @@ public class CommitViewImpl extends Window implements CommitView {
         this.ensureDebugId("git-commit-window");
 
         this.setTitle(locale.commitTitle());
+
+        Widget widget = ourUiBinder.createAndBindUi(this);
+        this.setWidget(widget);
 
         btnCancel = createButton(locale.buttonCancel(), "git-commit-cancel", new ClickHandler() {
 
@@ -144,12 +148,17 @@ public class CommitViewImpl extends Window implements CommitView {
 
     @Override
     public void showDialog(TreeView treeView) {
-        if (this.treeView == null) {
-            this.treeView = treeView;
-            Widget widget = ourUiBinder.createAndBindUi(this);
-            this.setWidget(widget);
-        }
+//        if (this.treeView == null) {
+//            this.treeView = treeView;
+//            Widget widget = ourUiBinder.createAndBindUi(this);
+//            this.setWidget(widget);
+//        }
         this.show();
+    }
+
+    @Override
+    public void setTreeView(TreeView treeView) {
+        this.field.add(treeView);
     }
 
     /** {@inheritDoc} */
