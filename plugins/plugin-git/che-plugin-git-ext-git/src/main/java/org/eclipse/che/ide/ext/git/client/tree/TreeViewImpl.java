@@ -64,6 +64,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static java.util.Collections.singletonList;
+
 /**
  * Implementation of {@link TreeView}.
  *
@@ -166,15 +168,15 @@ public class TreeViewImpl extends Composite implements TreeView {
                 @Override
                 public void onBrowserEvent(Event event) {
                     if (Event.ONCLICK == event.getTypeInt() && event.getTarget().getTagName().equalsIgnoreCase("label")) {
-//                        delegate.onFileNodeCheckBoxValueChanged(node);
-                        ((ChangedNodePresentation)presentation).setSelected(!((ChangedNode)node).isSelected());
-//                        ((ChangedNode)node).setSelected(!((ChangedNode)node).isSelected());
-                        for (Node node : tree.getAllChildNodes(Collections.singletonList(node), false)) {
-                            ((ChangedNodePresentation)((HasPresentation)node).getPresentation(false))
-                                    .setSelected(((ChangedNodePresentation)presentation).isSelected());
-//                            ((ChangedNode)node).setSelected(!((ChangedNode)node).isSelected());
+                        delegate.onFileNodeCheckBoxValueChanged(node);
+                        ChangedNodePresentation pr = (ChangedNodePresentation)presentation;
+                        boolean selected = pr.isSelected();
+                        pr.setSelected(!selected);
+                        List<Node> childNodes = tree.getAllChildNodes(singletonList(node), false);
+                        for (Node node : childNodes) {
+                            ChangedNodePresentation nodePr = (ChangedNodePresentation)((HasPresentation)node).getPresentation(false);
+                            nodePr.setSelected(pr.isSelected());
                         }
-//                        render(node, domID, joint, depth);
                     }
                 }
             });
