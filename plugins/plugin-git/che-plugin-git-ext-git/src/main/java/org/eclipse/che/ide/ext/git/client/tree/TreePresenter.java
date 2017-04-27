@@ -90,8 +90,8 @@ public class TreePresenter implements TreeView.ActionDelegate {
     }
 
     @Override
-    public void onFileNodeCheckBoxValueChanged(Node node) {
-//        ((ChangedNode)node).setSelected(!((ChangedNode)node).isSelected());
+    public void onFileNodeCheckBoxValueChanged(String Item) {
+
     }
 
     @Override

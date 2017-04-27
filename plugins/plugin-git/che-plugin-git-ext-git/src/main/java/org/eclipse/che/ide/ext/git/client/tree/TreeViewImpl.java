@@ -96,7 +96,7 @@ public class TreeViewImpl extends Composite implements TreeView {
 
     private final NodesResources nodesResources;
 
-    //    @Inject
+//    @Inject
     public TreeViewImpl(GitResources resources,
                         GitLocalizationConstant locale,
                         NodesResources nodesResources) {
@@ -133,100 +133,38 @@ public class TreeViewImpl extends Composite implements TreeView {
 
         @Override
         public Element render(final Node node, final String domID, final Tree.Joint joint, final int depth) {
-            final NodePresentation presentation;
-            if (node instanceof HasPresentation) {
-                presentation = ((HasPresentation)node).getPresentation(false);
-            } else {
-                presentation = new ChangedNodePresentation();
-                presentation.setPresentableText(node.getName());
-            }
+            Element rootContainer = super.render(node, domID, joint, depth);
+            Element nodeContainer = rootContainer.getFirstChildElement();
 
-            Element rootContainer = getRootContainer(domID);
-
-            Element nodeContainer = getNodeContainer();
-
-            nodeContainer.getStyle().setPaddingLeft((double)depth * 16, Style.Unit.PX);
-
-            Element jointContainer = getJointContainer(joint);
-
-            Element iconContainer = getIconContainer(presentation.getPresentableIcon());
-
-            Element userElement = getUserElement(presentation.getUserElement());
-
-            Element presentableTextContainer = getPresentableTextContainer(createPresentableTextElement(presentation));
-
-            Element infoTextContainer = getInfoTextContainer(createInfoTextElement(presentation));
-
-            Element descendantsContainer = getDescendantsContainer();
-
-            final CheckBox checkBox = new CheckBox();
-            Element element = checkBox.getElement();
-            ((InputElement)element.getElementsByTagName("input").getItem(0))
-                    .setChecked(((ChangedNodePresentation)presentation).isSelected());
-            Event.sinkEvents(element, Event.ONCLICK);
-            Event.setEventListener(element, new EventListener() {
+            final NodePresentation presentation = ((HasPresentation)node).getPresentation(false);
+            final Element checkBoxElement = new CheckBox().getElement();
+            Element input = checkBoxElement.getElementsByTagName("input").getItem(0);
+            ((InputElement)input).setChecked(((ChangedNodePresentation)presentation).isSelected());
+            Event.sinkEvents(checkBoxElement, Event.ONCLICK);
+            Event.setEventListener(checkBoxElement, new EventListener() {
                 @Override
                 public void onBrowserEvent(Event event) {
                     if (Event.ONCLICK == event.getTypeInt() && event.getTarget().getTagName().equalsIgnoreCase("label")) {
-                        delegate.onFileNodeCheckBoxValueChanged(node);
                         ChangedNodePresentation pr = (ChangedNodePresentation)presentation;
                         boolean selected = pr.isSelected();
                         pr.setSelected(!selected);
                         List<Node> childNodes = tree.getAllChildNodes(singletonList(node), false);
                         for (Node node : childNodes) {
+                            delegate.onFileNodeCheckBoxValueChanged(node.getName());
                             ChangedNodePresentation nodePr = (ChangedNodePresentation)((HasPresentation)node).getPresentation(false);
-                            nodePr.setSelected(pr.isSelected());
+                            nodePr.setSelected(!selected);
+                            Element firstChildElement = render(node, domID, joint, depth).getFirstChildElement();
+                            Element span = firstChildElement.getElementsByTagName("span").getItem(0);
+                            Element input = span.getElementsByTagName("input").getItem(0);
+                            ((InputElement)input).setChecked(pr.isSelected());
+                            tree.refresh(node);
                         }
                     }
                 }
             });
-            nodeContainer.appendChild(jointContainer);
-            nodeContainer.appendChild(element);
-            nodeContainer.appendChild(iconContainer);
-            nodeContainer.appendChild(userElement == null ? Document.get().createSpanElement() : userElement);
-            nodeContainer.appendChild(presentableTextContainer);
-            nodeContainer.appendChild(infoTextContainer);
 
-            rootContainer.appendChild(nodeContainer);
-            rootContainer.appendChild(descendantsContainer);
-
+            nodeContainer.insertAfter(checkBoxElement, nodeContainer.getFirstChild());
             return rootContainer;
-        }
-
-        private Element createInfoTextElement(NodePresentation presentation) {
-            DivElement textElement = Document.get().createDivElement();
-
-            StringBuilder sb = new StringBuilder();
-
-            if (presentation.getInfoTextWrapper() != null) {
-                sb.append(presentation.getInfoTextWrapper().first);
-            }
-
-            if (!Strings.isNullOrEmpty(presentation.getInfoText())) {
-                sb.append(presentation.getInfoText());
-            }
-
-            if (presentation.getInfoTextWrapper() != null) {
-                sb.append(presentation.getInfoTextWrapper().second);
-            }
-
-            textElement.setInnerText(sb.toString());
-            textElement.setAttribute("style", presentation.getInfoTextCss());
-
-            //TODO support text colorization
-
-            return textElement;
-        }
-
-        private Element createPresentableTextElement(NodePresentation presentation) {
-            DivElement textElement = Document.get().createDivElement();
-
-            textElement.setInnerText(Strings.nullToEmpty(presentation.getPresentableText()));
-            textElement.setAttribute("style", presentation.getPresentableTextCss());
-
-            //TODO support text colorization
-
-            return textElement;
         }
     }
 

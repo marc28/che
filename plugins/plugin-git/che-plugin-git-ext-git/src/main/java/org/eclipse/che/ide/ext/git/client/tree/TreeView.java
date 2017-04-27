@@ -49,7 +49,7 @@ public interface TreeView extends View<TreeView.ActionDelegate> {
         /** Performs any actions appropriate in response to the user double clicked on the file node. */
         void onFileNodeDoubleClicked();
 
-        void onFileNodeCheckBoxValueChanged(Node node);
+        void onFileNodeCheckBoxValueChanged(String item);
     }
 
     /**
