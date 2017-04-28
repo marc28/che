@@ -63,16 +63,16 @@ export class PagingButtons implements ng.IDirective {
       $scope.fetchPage({key: RemotePageLabels.LAST});
     };
     $scope.hasNextPage = () => {
-      return $scope.pagesInfo.countPages - $scope.pagesInfo.currentPageNumber > 0;
+      return $scope.pagesInfo && $scope.pagesInfo.countPages - $scope.pagesInfo.currentPageNumber > 0;
     };
     $scope.hasPreviousPage = () => {
-      return $scope.pagesInfo.currentPageNumber > 1;
+      return $scope.pagesInfo && $scope.pagesInfo.currentPageNumber > 1;
     };
     $scope.isPagination = () => {
       return $scope.pagesInfo && $scope.pagesInfo.countPages > 1;
     };
     $scope.getCurrentPageNumber = () => {
-      return $scope.pagesInfo.currentPageNumber;
+      return $scope.pagesInfo && $scope.pagesInfo.currentPageNumber;
     };
   }
 }

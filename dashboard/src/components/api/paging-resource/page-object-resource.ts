@@ -72,9 +72,16 @@ export class PageObjectResource {
     });
 
     // set default values
-    this.pagesInfo = {countPages: 0, currentPageNumber: 1};
+    this.pagesInfo = {countPages: 1, currentPageNumber: 1};
   }
 
+  /**
+   * Create response object from data and header link.
+   * @param data {Array<any>}
+   * @param headersLink {string}
+   * @returns {ITransformResponse}
+   * @private
+   */
   _getPageFromResponse(data: Array<any>, headersLink: string): ITransformResponse {
     let newData = [];
     if (angular.isDefined(data) && angular.isArray(data)) {
@@ -108,12 +115,18 @@ export class PageObjectResource {
     };
   }
 
+  /**
+   * Gets page param by link.
+   * @param pageLink
+   * @returns {IPageParam}
+   * @private
+   */
   _getPageParamByLink(pageLink: string): IPageParam {
-    let lastPageParamMap = new Map();
+    let lastPageParamMap: Map<string, number> = new Map();
     let pattern = new RegExp('([_\\w]+)=([\\w]+)', 'g');
     let result;
     while (result = pattern.exec(pageLink)) {
-      lastPageParamMap.set(result[1], result[2]);
+      lastPageParamMap.set(result[1], parseInt(result[2], 10));
     }
     let skipCount = lastPageParamMap.get(SKIP_COUNT);
     let maxItems = lastPageParamMap.get(MAX_ITEMS);
@@ -124,25 +137,31 @@ export class PageObjectResource {
     };
   }
 
+  /**
+   * Update current page data objects.
+   * @param data {ITransformResponse}
+   * @private
+   */
   _updateCurrentPageData(data?: ITransformResponse): void {
     let pageData: IPageData = this.objectPagesMap.get(this.pagesInfo.currentPageNumber);
     if (angular.isDefined(data) && angular.isDefined(pageData)) {
       pageData.objects = data.objects;
     }
-    // update objects for current page
+    // update current page objects
     this.pageObjects.length = 0;
-    if (angular.isUndefined(pageData) || !angular.isArray(pageData.objects) || pageData.objects.length === 0) {
+    let objects = !data && pageData ? pageData.objects : data.objects;
+    if (!angular.isArray(objects)) {
       return;
     }
-    pageData.objects.forEach((object: any) => {
+    objects.forEach((object: any) => {
       this.pageObjects.push(object);
     });
   }
 
   /**
-   * Update page links by relative direction ('first', 'prev', 'next', 'last')
-   *
+   * Update page links by relative direction ('first', 'prev', 'next', 'last').
    * @param data {ITransformResponse}
+   * @private
    */
   _updatePageLinks(data: ITransformResponse): void {
     if (!data || !data.links) {
@@ -153,7 +172,7 @@ export class PageObjectResource {
     // last page link
     let lastPageLink = data.links.get(RemotePageLabels.LAST);
     let pageParam = this._getPageParamByLink(lastPageLink);
-    let countPages = pageParam.skipCount / pageParam.maxItems + 1;
+    let countPages = Math.floor(pageParam.skipCount / pageParam.maxItems) + 1;
     this.pagesInfo.countPages = countPages;
     this._updatePagesMapLinks(countPages, lastPageLink);
     // previous page link
@@ -164,6 +183,12 @@ export class PageObjectResource {
     this._updatePagesMapLinks(nextPageNumber, data.links.get(RemotePageLabels.NEXT));
   }
 
+  /**
+   * Update map with page's link.
+   * @param pageNumber {number}
+   * @param pageLink {string}
+   * @private
+   */
   _updatePagesMapLinks(pageNumber: number, pageLink: string): void {
     if (!pageNumber || !pageLink) {
       return;
@@ -179,8 +204,8 @@ export class PageObjectResource {
   }
 
   /**
-   * Ask for loading the objects in asynchronous way
-   * If there are no changes, it's not updated
+   * Ask for loading the objects in asynchronous way.
+   * If there are no changes, it's not updated.
    * @param maxItems - the max number of items to return
    * @returns {*} the promise
    */
@@ -206,7 +231,7 @@ export class PageObjectResource {
   }
 
   /**
-   * Ask for loading any page objects depends on page key ('first', 'prev', 'next', 'last'  or '1', '2', '3' ...)
+   * Ask for loading any page objects depends on page key ('first', 'prev', 'next', 'last'  or '1', '2', '3' ...).
    * @param pageKey {string} - the key of page
    * @returns {ng.IPromise<Array<any>>} the promise
    */
@@ -261,7 +286,7 @@ export class PageObjectResource {
   }
 
   /**
-   * Gets the pageInfo object
+   * Gets the pageInfo object.
    * @returns {IPageInfo}
    */
   getPagesInfo(): che.IPageInfo {
@@ -269,24 +294,20 @@ export class PageObjectResource {
   }
 
   /**
-   * Gets the page objects
+   * Gets the page objects.
    * @returns {Array<any>}
    */
   getPageObjects(): Array<any> {
     if (angular.isUndefined(this.objectKey) || angular.isUndefined(this.objectMap)) {
       return this.pageObjects;
     }
-    let newPageObjects = [];
-    this.pageObjects.forEach((objectKey: string) => {
-      // add an object
-      newPageObjects.push(this.objectMap.get(objectKey));
+    return this.pageObjects.map((key: string) => {
+      return this.objectMap.get(key);
     });
-
-    return newPageObjects;
   }
 
   /**
-   * Gets the request data object
+   * Gets the request data object.
    * @returns {che.IRequestData}
    */
   getRequestDataObject(): che.IRequestData {
@@ -294,7 +315,7 @@ export class PageObjectResource {
   }
 
   /**
-   * Gets the object key
+   * Gets the object key.
    * @returns {string}
    */
   getObjectKey(): string {

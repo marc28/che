@@ -61,6 +61,17 @@ export class CheProfile {
     this.fetchProfile();
   }
 
+  /**
+   * Gets the full name if it possible
+   * @returns {string} full name
+   */
+  getFullName(attr: che.IProfileAttributes): string {
+    if (!angular.isObject(attr)) {
+      return '';
+    }
+    const {firstName, lastName} = attr;
+    return `${firstName || ''} ${lastName || ''}`.trim();
+  }
 
   /**
    * Gets the profile
