@@ -14,11 +14,6 @@ import org.eclipse.che.ide.api.data.tree.Node;
 
 import javax.validation.constraints.NotNull;
 
-/**
- * Created by ivinokur on 19.04.17.
- */
 public interface TreeCallBack {
-    void onFileNodeDoubleClicked();
-
     void onNodeSelected(@NotNull Node node);
 }

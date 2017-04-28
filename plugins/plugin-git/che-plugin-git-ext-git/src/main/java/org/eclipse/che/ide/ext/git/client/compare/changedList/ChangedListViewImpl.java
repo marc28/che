@@ -35,8 +35,8 @@ import org.eclipse.che.ide.ui.window.Window;
  */
 @Singleton
 public class ChangedListViewImpl extends Window implements ChangedListView {
-    @UiField(provided = true)
-    TreeView treeView;
+    @UiField
+    FlowPanel filesPanel;
 
     interface ChangedListViewImplUiBinder extends UiBinder<Widget, ChangedListViewImpl> {
     }
@@ -52,6 +52,9 @@ public class ChangedListViewImpl extends Window implements ChangedListView {
     protected ChangedListViewImpl(GitLocalizationConstant locale) {
         this.locale = locale;
         this.setTitle(locale.changeListTitle());
+
+        Widget widget = uiBinder.createAndBindUi(this);
+        this.setWidget(widget);
 
         createButtons();
 
@@ -91,13 +94,13 @@ public class ChangedListViewImpl extends Window implements ChangedListView {
 
     /** {@inheritDoc} */
     @Override
-    public void showDialog(TreeView treeView) {
-        if (this.treeView == null) {
-            this.treeView = treeView;
-            Widget widget = uiBinder.createAndBindUi(this);
-            this.setWidget(widget);
-        }
+    public void showDialog() {
         this.show();
+    }
+
+    @Override
+    public void setTreeView(TreeView treeView) {
+        filesPanel.add(treeView);
     }
 
     private void createButtons() {

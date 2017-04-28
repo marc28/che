@@ -10,18 +10,12 @@
  *******************************************************************************/
 package org.eclipse.che.ide.ext.git.client.tree;
 
-import com.google.common.base.Strings;
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.dom.client.DivElement;
-import com.google.gwt.dom.client.Document;
 import com.google.gwt.dom.client.Element;
 import com.google.gwt.dom.client.InputElement;
-import com.google.gwt.dom.client.Style;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.event.dom.client.MouseEvent;
-import com.google.gwt.event.logical.shared.ValueChangeEvent;
-import com.google.gwt.event.logical.shared.ValueChangeHandler;
+import com.google.gwt.event.shared.GwtEvent;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.user.client.Event;
@@ -32,14 +26,12 @@ import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.DockLayoutPanel;
 import com.google.gwt.user.client.ui.LayoutPanel;
 import com.google.inject.Inject;
-import com.google.inject.Singleton;
 
-import org.eclipse.che.api.promises.client.Operation;
-import org.eclipse.che.api.promises.client.OperationException;
 import org.eclipse.che.ide.FontAwesome;
 import org.eclipse.che.ide.api.data.tree.Node;
 import org.eclipse.che.ide.ext.git.client.GitLocalizationConstant;
 import org.eclipse.che.ide.ext.git.client.GitResources;
+import org.eclipse.che.ide.ext.git.client.compare.FileStatus;
 import org.eclipse.che.ide.ext.git.client.compare.FileStatus.Status;
 import org.eclipse.che.ide.ext.git.client.tree.ChangedFolderNode.ChangedNodePresentation;
 import org.eclipse.che.ide.project.shared.NodesResources;
@@ -50,6 +42,8 @@ import org.eclipse.che.ide.ui.smartTree.SelectionModel;
 import org.eclipse.che.ide.ui.smartTree.Tree;
 import org.eclipse.che.ide.ui.smartTree.TreeStyles;
 import org.eclipse.che.ide.ui.smartTree.compare.NameComparator;
+import org.eclipse.che.ide.ui.smartTree.event.ExpandNodeEvent;
+import org.eclipse.che.ide.ui.smartTree.event.ExpandNodeEvent.ExpandNodeHandler;
 import org.eclipse.che.ide.ui.smartTree.event.SelectionChangedEvent;
 import org.eclipse.che.ide.ui.smartTree.presentation.DefaultPresentationRenderer;
 import org.eclipse.che.ide.ui.smartTree.presentation.HasPresentation;
@@ -73,36 +67,42 @@ import static java.util.Collections.singletonList;
  */
 public class TreeViewImpl extends Composite implements TreeView {
     interface ChangedListViewImplUiBinder extends UiBinder<DockLayoutPanel, TreeViewImpl> {
+
     }
 
     private static ChangedListViewImplUiBinder uiBinder = GWT.create(ChangedListViewImplUiBinder.class);
 
     @UiField
     LayoutPanel changedFilesPanel;
-    @UiField
-    Button      changeViewModeButton;
-    @UiField
-    Button      expandButton;
-    @UiField
-    Button      collapseButton;
 
+    @UiField
+    Button changeViewModeButton;
+    @UiField
+    Button expandButton;
+    @UiField
+    Button collapseButton;
     @UiField(provided = true)
     final GitLocalizationConstant locale;
     @UiField(provided = true)
     final GitResources            res;
 
-    private ActionDelegate delegate;
-    private Tree           tree;
+    private ActionDelegate      delegate;
+    private Tree                tree;
+    private Map<String, Status> items;
 
+    private final Set<String>    unselected;
+    private final Set<String>    unselectedFolders;
     private final NodesResources nodesResources;
 
-//    @Inject
+    @Inject
     public TreeViewImpl(GitResources resources,
                         GitLocalizationConstant locale,
                         NodesResources nodesResources) {
         this.res = resources;
         this.locale = locale;
         this.nodesResources = nodesResources;
+        this.unselected = new HashSet<>();
+        this.unselectedFolders = new HashSet<>();
 
         initWidget(uiBinder.createAndBindUi(this));
 
@@ -123,6 +123,32 @@ public class TreeViewImpl extends Composite implements TreeView {
         tree.setPresentationRenderer(new ChangedListRender(tree.getTreeStyles()));
         changedFilesPanel.add(tree);
 
+        tree.addExpandHandler(new ExpandNodeHandler() {
+            @Override
+            public void onExpand(ExpandNodeEvent event) {
+
+
+
+                Node node = event.getNode();
+
+                final NodePresentation parentpresentation = ((HasPresentation)node).getPresentation(false);
+                boolean selected = ((ChangedNodePresentation)parentpresentation).isSelected();
+
+
+                List<Node> childNodes = tree.getAllChildNodes(singletonList(node), false);
+
+                for (Node node1 : childNodes) {
+                    ChangedNodePresentation nodePr = (ChangedNodePresentation)((HasPresentation)node).getPresentation(false);
+                    nodePr.setSelected(!selected);
+                    Element firstChildElement = tree.renderNode(node1, 2).getFirstChildElement();
+                    Element span = firstChildElement.getElementsByTagName("span").getItem(0);
+                    Element input = span.getElementsByTagName("input").getItem(0);
+                    ((InputElement)input).setChecked(selected);
+                    tree.refresh(node);
+                }
+            }
+        });
+
         createButtons();
     }
 
@@ -138,8 +164,8 @@ public class TreeViewImpl extends Composite implements TreeView {
 
             final NodePresentation presentation = ((HasPresentation)node).getPresentation(false);
             final Element checkBoxElement = new CheckBox().getElement();
-            Element input = checkBoxElement.getElementsByTagName("input").getItem(0);
-            ((InputElement)input).setChecked(((ChangedNodePresentation)presentation).isSelected());
+            InputElement input = (InputElement)checkBoxElement.getElementsByTagName("input").getItem(0);
+            input.setChecked(((ChangedNodePresentation)presentation).isSelected());
             Event.sinkEvents(checkBoxElement, Event.ONCLICK);
             Event.setEventListener(checkBoxElement, new EventListener() {
                 @Override
@@ -149,8 +175,21 @@ public class TreeViewImpl extends Composite implements TreeView {
                         boolean selected = pr.isSelected();
                         pr.setSelected(!selected);
                         List<Node> childNodes = tree.getAllChildNodes(singletonList(node), false);
+
+//                        String name = node.getName();
+//                        if (node instanceof ChangedFolderNode) {
+//                            for (String item : items.keySet()) {
+//                                if (item.contains(name + "/")) {
+//                                    unselected.add(item);
+//                                }
+//                            }
+//                        } else if (unselected.contains(name)) {
+//                            unselected.remove(name);
+//                        } else {
+//                            unselected.add(name);
+//                        }
+
                         for (Node node : childNodes) {
-                            delegate.onFileNodeCheckBoxValueChanged(node.getName());
                             ChangedNodePresentation nodePr = (ChangedNodePresentation)((HasPresentation)node).getPresentation(false);
                             nodePr.setSelected(!selected);
                             Element firstChildElement = render(node, domID, joint, depth).getFirstChildElement();
@@ -183,6 +222,7 @@ public class TreeViewImpl extends Composite implements TreeView {
 
     @Override
     public void viewChangedFilesAsTree(@NotNull Map<String, Status> items) {
+        this.items = items;
         tree.getNodeStorage().clear();
         List<Node> nodes = getGroupedNodes(items);
         if (nodes.size() == 1) {
@@ -198,11 +238,6 @@ public class TreeViewImpl extends Composite implements TreeView {
     @Override
     public void collapseAllDirectories() {
         tree.collapseAll();
-    }
-
-    @Override
-    public List<Node> getNodes() {
-        return tree.getRootNodes();
     }
 
     @Override

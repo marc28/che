@@ -11,23 +11,13 @@
 package org.eclipse.che.ide.ext.git.client.tree;
 
 import com.google.inject.Inject;
-import com.google.inject.Singleton;
 
-import org.eclipse.che.commons.annotation.Nullable;
 import org.eclipse.che.ide.api.data.tree.Node;
-import org.eclipse.che.ide.api.notification.NotificationManager;
-import org.eclipse.che.ide.api.resources.Project;
 import org.eclipse.che.ide.ext.git.client.GitLocalizationConstant;
-import org.eclipse.che.ide.ext.git.client.GitResources;
-import org.eclipse.che.ide.ext.git.client.compare.ComparePresenter;
 import org.eclipse.che.ide.ext.git.client.compare.FileStatus.Status;
-import org.eclipse.che.ide.project.shared.NodesResources;
-import org.eclipse.che.ide.ui.smartTree.Tree;
 
 import javax.validation.constraints.NotNull;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -37,7 +27,6 @@ import java.util.Set;
  * @author Igor Vinokur
  * @author Vlad Zhukovskyi
  */
-//@Singleton
 public class TreePresenter implements TreeView.ActionDelegate {
     private final TreeView                view;
     private final GitLocalizationConstant locale;
@@ -47,9 +36,9 @@ public class TreePresenter implements TreeView.ActionDelegate {
     private boolean             treeViewEnabled;
 
     @Inject
-    public TreePresenter(GitResources resources, GitLocalizationConstant locale, NodesResources nodesResources) {
-        this.view = new TreeViewImpl(resources, locale, nodesResources);
+    public TreePresenter(GitLocalizationConstant locale, TreeView view) {
         this.locale = locale;
+        this.view = view;
         this.view.setDelegate(this);
     }
 
@@ -63,9 +52,7 @@ public class TreePresenter implements TreeView.ActionDelegate {
                      TreeCallBack callBack) {
         this.changedFiles = changedFiles;
         this.callBack = callBack;
-
         view.setEnableExpandCollapseButtons(treeViewEnabled);
-
 
         viewChangedFiles();
     }
@@ -75,22 +62,11 @@ public class TreePresenter implements TreeView.ActionDelegate {
     }
 
     public Set<String> getUnselected() {
-        Set<String> unselected = new HashSet<>();
-        for (Node node : view.getNodes()) {
-            if (((ChangedNode)node).isSelected()) {
-                unselected.add(node.getName());
-            }
-        }
-        return unselected;
+        return null;
     }
 
     @Override
     public void onFileNodeDoubleClicked() {
-        callBack.onFileNodeDoubleClicked();
-    }
-
-    @Override
-    public void onFileNodeCheckBoxValueChanged(String Item) {
 
     }
 

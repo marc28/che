@@ -88,6 +88,7 @@ public class GitGinModule extends AbstractGinModule {
         bind(PullView.class).to(PullViewImpl.class).in(Singleton.class);
         bind(HistoryView.class).to(HistoryViewImpl.class).in(Singleton.class);
         bind(GitOutputPartView.class).to(GitOutputPartViewImpl.class);
+        bind(TreeView.class).to(TreeViewImpl.class);
         install(new GinFactoryModuleBuilder().implement(GitOutputConsole.class, GitOutputConsolePresenter.class)
                                              .build(GitOutputConsoleFactory.class));
 

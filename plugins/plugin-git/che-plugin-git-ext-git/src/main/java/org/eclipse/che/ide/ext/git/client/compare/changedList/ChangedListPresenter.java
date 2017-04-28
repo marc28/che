@@ -45,8 +45,9 @@ import static org.eclipse.che.ide.api.notification.StatusNotification.Status.FAI
 public class ChangedListPresenter implements ChangedListView.ActionDelegate {
     private final ChangedListView     view;
     private final NotificationManager notificationManager;
-    private final TreePresenter treePresenter;
+    private final TreePresenter       treePresenter;
     private final ComparePresenter    comparePresenter;
+    private final TreeCallBack        callBack;
 
     private Project project;
     private String  file;
@@ -64,6 +65,21 @@ public class ChangedListPresenter implements ChangedListView.ActionDelegate {
         this.notificationManager = notificationManager;
         this.treePresenter = treePresenter;
         this.view.setDelegate(this);
+
+        callBack = new TreeCallBack() {
+            @Override
+            public void onNodeSelected(Node node) {
+                if (node instanceof ChangedFolderNode) {
+                    ChangedListPresenter.this.view.setEnableCompareButton(false);
+                    return;
+                }
+                ChangedListPresenter.this.view.setEnableCompareButton(true);
+                ChangedListPresenter.this.file = node.getName();
+                ChangedListPresenter.this.status = ((ChangedFileNode)node).getStatus();
+            }
+        };
+
+        this.view.setTreeView(treePresenter.getView());
     }
 
     /**
@@ -85,27 +101,9 @@ public class ChangedListPresenter implements ChangedListView.ActionDelegate {
 
         view.setEnableCompareButton(false);
 
-        TreeCallBack callBack = new TreeCallBack() {
-            @Override
-            public void onFileNodeDoubleClicked() {
-                showCompare();
-            }
-
-            @Override
-            public void onNodeSelected(Node node) {
-                if (node instanceof ChangedFolderNode) {
-                    view.setEnableCompareButton(false);
-                    return;
-                }
-                view.setEnableCompareButton(true);
-                ChangedListPresenter.this.file = node.getName();
-                ChangedListPresenter.this.status = ((ChangedFileNode)node).getStatus();
-            }
-        };
-
         treePresenter.show(changedFiles, callBack);
-        view.showDialog(treePresenter.getView());
 
+        view.showDialog();
     }
 
     @Override

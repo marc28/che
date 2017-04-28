@@ -49,7 +49,7 @@ public interface TreeView extends View<TreeView.ActionDelegate> {
         /** Performs any actions appropriate in response to the user double clicked on the file node. */
         void onFileNodeDoubleClicked();
 
-        void onFileNodeCheckBoxValueChanged(String item);
+//        void onFileNodeCheckBoxValueChanged(String item);
     }
 
     /**
@@ -73,8 +73,6 @@ public interface TreeView extends View<TreeView.ActionDelegate> {
 
     /** Collapse all directories in tree. */
     void collapseAllDirectories();
-
-    List<Node> getNodes();
 
     /**
      * Change the enable state of the 'Expand/Collapse all directories' buttons.

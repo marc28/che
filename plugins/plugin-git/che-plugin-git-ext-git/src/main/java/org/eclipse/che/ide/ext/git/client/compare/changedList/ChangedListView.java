@@ -37,7 +37,9 @@ public interface ChangedListView extends View<ChangedListView.ActionDelegate> {
     void close();
 
     /** Show dialog. */
-    void showDialog(TreeView treeView);
+    void showDialog();
+
+    void setTreeView(TreeView treeView);
 
     /**
      * Change the enable state of the compare button.

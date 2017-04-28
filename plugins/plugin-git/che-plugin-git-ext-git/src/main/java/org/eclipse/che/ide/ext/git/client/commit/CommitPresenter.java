@@ -106,11 +106,6 @@ public class CommitPresenter implements CommitView.ActionDelegate {
 
         this.callBack = new TreeCallBack() {
             @Override
-            public void onFileNodeDoubleClicked() {
-
-            }
-
-            @Override
             public void onNodeSelected(Node node) {
 
             }
