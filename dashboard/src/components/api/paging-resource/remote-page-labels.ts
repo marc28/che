@@ -20,13 +20,26 @@ export class RemotePageLabels {
   static get FIRST(): string {
     return 'first';
   }
-  static get PREVIOUS(): string {
-    return 'prev';
-  }
+
   static get NEXT(): string {
     return 'next';
   }
+
   static get LAST(): string {
     return 'last';
   }
+
+  static get PREVIOUS(): string {
+    return 'prev';
+  }
+
+  static getValues(): Array<string> {
+    return [
+      RemotePageLabels.FIRST,
+      RemotePageLabels.NEXT,
+      RemotePageLabels.LAST,
+      RemotePageLabels.PREVIOUS
+    ];
+  }
+
 }

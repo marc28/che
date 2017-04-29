@@ -12,6 +12,7 @@
 import {CheHttpBackend} from '../test/che-http-backend';
 import {CheAPIBuilder} from '../builder/che-api-builder.factory';
 import {ChePageObject} from './page-object.factory';
+import {PageObjectMock} from './page-object.mock';
 
 describe('PageObject >', () => {
   /**
@@ -31,6 +32,8 @@ describe('PageObject >', () => {
    */
   let cheBackend: CheHttpBackend;
 
+  let pageObjectMock: PageObjectMock;
+
   /**
    *  setup module
    */
@@ -45,7 +48,9 @@ describe('PageObject >', () => {
     cheBackend = cheHttpBackend;
     $httpBackend = cheHttpBackend.getHttpBackend();
 
-    cheBackend.factoriesBackendSetup();
+    cheBackend.setup();
+
+    pageObjectMock = new PageObjectMock(factory, '/api/object', 15, 50);
   }));
 
   /**
@@ -56,20 +61,18 @@ describe('PageObject >', () => {
     $httpBackend.verifyNoOutstandingRequest();
   });
 
-  it('Fetch page objects without header link data', () => {
-    const testMaxItems = 15;
-    const url = '/api/object';
-    const objects: { id: string; attributes: { name: string } } = [];
-    const pageObjectResource = factory.createPageObjectResource(url, {});
+  fit('Fetch page objects without header link data', () => {
+    const objects: Array<{ id: string; attributes: { name: string } }> = [];
+    const pageObjectResource = pageObjectMock.getPageObjectResource();
 
-    for (let n = 0; n < testMaxItems; n++) {
+    for (let n = 0; n < pageObjectMock.getMaxItems(); n++) {
       objects.push({id: `testId_${n}`, attributes: {name: `testName${n}`}});
     }
 
-    pageObjectResource.fetchObjects(testMaxItems);
+    pageObjectResource.fetchObjects(pageObjectMock.getMaxItems());
 
     // make response for object list
-    $httpBackend.expect('GET', new RegExp(url + '?.*$')).respond(200, objects);
+    $httpBackend.expect('GET', pageObjectMock.getUrlRegExp()).respond(200, objects);
 
     // gets page params
     const {countPages, currentPageNumber} = pageObjectResource.getPagesInfo();
@@ -80,7 +83,7 @@ describe('PageObject >', () => {
     $httpBackend.flush();
 
     // check objects
-    expect(maxItems).toEqual(testMaxItems.toLocaleString());
+    expect(maxItems).toEqual(pageObjectMock.getMaxItems().toLocaleString());
     expect(skipCount).toEqual(testSkipCount.toLocaleString());
     expect(currentPageNumber).toEqual(1);
     expect(countPages).toEqual(1);
@@ -88,49 +91,55 @@ describe('PageObject >', () => {
   });
 
   it('Fetch page objects for the first, next and last pages. Then - preview and return to the first', () => {
-    const testMaxItems = 15;
-    const countObjects = 50;
     const url = '/api/object';
-    const objects: { id: string; attributes: { name: string } } = [];
-    const keys = ['first', 'next', 'last', 'prev'];
-    const testCountPages = Math.floor((countObjects - 1) / testMaxItems) + 1;
-    const pageObjectResource = factory.createPageObjectResource(url, {});
+    const objects: Array<{ id: string; attributes: { name: string } }> = [];
+    const pageObjectResource = pageObjectMock.getPageObjectResource();
+    const keys = pageObjectMock.getPageLabels();
+    const testCountPages = pageObjectMock.getCountPages();
+
 
     let first_page_objects: Array<any>;
 
     for (let n = 0; n < keys.length; n++) {
       let currentPage = pageObjectResource.getPagesInfo().currentPageNumber;
-      let testSkipCount = (currentPage - 1) * testMaxItems;
-      let currentPageLength = countObjects - (currentPage * testMaxItems);
-      let first_link = `${url}?skipCount=${testSkipCount}&maxItems=${testMaxItems}`;
-      let next_link = `${url}?skipCount=${currentPage * testMaxItems}&maxItems=${testMaxItems}`;
-      let last_link = `${url}?skipCount=${(testCountPages - 1) * testMaxItems}&maxItems=${testMaxItems}`;
+      let testSkipCount = (currentPage - 1) * pageObjectMock.getMaxItems();
+      let currentPageLength = pageObjectMock.getCountObjects() - (currentPage * pageObjectMock.getMaxItems());
+      currentPageLength = currentPageLength < pageObjectMock.getMaxItems() ? currentPageLength : pageObjectMock.getMaxItems();
+      currentPageLength = currentPageLength > 0 ? currentPageLength : 0;
+
+      let first_link = `${url}?skipCount=${testSkipCount}&maxItems=${pageObjectMock.getMaxItems()}`;
+      let next_link = `${url}?skipCount=${currentPage * pageObjectMock.getMaxItems()}&maxItems=${pageObjectMock.getMaxItems()}`;
+      let last_link = `${url}?skipCount=${(testCountPages - 1) * pageObjectMock.getMaxItems()}&maxItems=${pageObjectMock.getMaxItems()}`;
+
       let headerLink = `\<${first_link}\>; rel="${keys[0]}",\<${last_link}\>; rel="${keys[2]}",\<${next_link}\>; rel="${keys[1]}"`;
 
-      currentPageLength = currentPageLength < testMaxItems ? currentPageLength : testMaxItems;
-      currentPageLength = currentPageLength > 0 ? currentPageLength : 0;
       objects.length = 0;
       for (let n = 0; n < currentPageLength; n++) {
         objects.push({id: `testId_${testSkipCount + n}`, attributes: {name: `testName${testSkipCount + n}`}});
       }
 
       const {skipCount} = pageObjectResource.getRequestDataObject();
-      if (!skipCount) {
+      // find firs page
+      if (currentPage === 1) {
+        // remember first page object
         first_page_objects = angular.copy(objects);
-        pageObjectResource.fetchObjects(testMaxItems);
+        pageObjectResource.fetchObjects(pageObjectMock.getMaxItems());
       } else {
-        let prev_link = `${url}?skipCount=${skipCount - testMaxItems}&maxItems=${testMaxItems}`;
+        // prepare 'prev' link
+        let prev_link = `${url}?skipCount=${skipCount - pageObjectMock.getMaxItems()}&maxItems=${pageObjectMock.getMaxItems()}`;
+        // add 'prev' link to header
         headerLink += `,\<${prev_link}\>; rel="${keys[3]}"`;
+        // fetch page objects
         pageObjectResource.fetchPageObjects(keys[n]);
       }
 
       // make response for object list
-      $httpBackend.expect('GET', new RegExp(url + '?.*$')).respond(200, objects, {link: headerLink});
+      $httpBackend.expect('GET', pageObjectMock.getUrlRegExp()).respond(200, objects, {link: headerLink});
 
       $httpBackend.flush();
 
       // check objects
-      expect(pageObjectResource.getRequestDataObject().maxItems).toEqual(testMaxItems.toLocaleString());
+      expect(pageObjectResource.getRequestDataObject().maxItems).toEqual(pageObjectMock.getMaxItems().toLocaleString());
       expect(pageObjectResource.getPagesInfo().countPages).toEqual(testCountPages);
       expect(pageObjectResource.getPageObjects()).toEqual(objects);
     }
@@ -139,12 +148,12 @@ describe('PageObject >', () => {
     pageObjectResource.fetchPageObjects(keys[0]);
 
     // change response
-    $httpBackend.expect('GET', new RegExp(url + '?.*$')).respond(304, {});
+    $httpBackend.expect('GET', pageObjectMock.getUrlRegExp()).respond(304, {});
 
     $httpBackend.flush();
 
     // check objects
-    expect(pageObjectResource.getRequestDataObject().maxItems).toEqual(testMaxItems.toLocaleString());
+    expect(pageObjectResource.getRequestDataObject().maxItems).toEqual(pageObjectMock.getMaxItems().toLocaleString());
     expect(pageObjectResource.getPagesInfo().countPages).toEqual(testCountPages);
     expect(pageObjectResource.getPageObjects()).toEqual(first_page_objects);
   });
